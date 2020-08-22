@@ -47,7 +47,7 @@ def syncTime(msg):
 
 
 def deviceStart(node_id, cmd):
-    '上位机命令'
+    """上位机命令"""
     global device_status
     print(device_status)
     if cmd == 'open_device':
@@ -62,7 +62,7 @@ def deviceStart(node_id, cmd):
 
 
 def dataAnalyse(msg):
-    '数据包解析'
+    """数据包解析"""
     data_object = {}
     global device_status
     global data_Receiving

@@ -61,12 +61,12 @@ def CANRecv(socket_server, CANaddr):
                         print("Recvive 0 error")
             else:
                 print('err Recv')
-        except  TimeoutError:
+        except TimeoutError:
             print('can disconnect')
 
 
 def CANHand():
-    'CAN处理'
+    """CAN处理"""
     print(threading.current_thread().name + 'running...')
     while exit_flag != True:
         msg = CAN_Analysis.CANRecvQueue.get()
