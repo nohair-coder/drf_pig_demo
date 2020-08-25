@@ -1,10 +1,13 @@
 from .models import FoodQuantity
 from apps.pigbase.models import PigBase
 from django.http import JsonResponse
-from django.views import View
+from rest_framework.views import APIView
+from utils.jwt_token.jwt_auth import JwtAuthorizationAuthentication
 import json
 import datetime
-from ..common.input_check import is_none
+from .logic import is_none
+
+
 # Create your views here.
 
 
@@ -25,23 +28,27 @@ def Caldate(date1):
 
 
 def final(index, algo, set):
-    if set == None:
-        if algo == None:
+    if set is None:
+        if algo is None:
             return index
         else:
             return algo
     else:
         return set
 
+
 def algo_backfat(backfat):
     algo_intake = backfat * 2
     return algo_intake
 
-class SetIntake(View):
-    def get(self,request):
-        req = request.GET['StationId']
+
+class SetIntake(APIView):
+    authentication_classes = [JwtAuthorizationAuthentication, ]
+
+    def get(self, request):
+        req = request.query_params['StationId']
         try:
-            print(req)
+            # print(req)
             piglist = PigBase.objects.filter(stationid=req, decpigtime=None)
             stationpig = list()
             for s in piglist:
@@ -64,30 +71,29 @@ class SetIntake(View):
             stationpig = None
         return JsonResponse({'code': '获取intake成功', 'stationpig': stationpig}, status=200)
 
-    def post(self,request):
-        req = json.loads(request.body)
+    def post(self, request):
+        req = request.data
         req_pigid = req['pigid']
-        req_backfat = req['backfat'] # 字符串
+        req_backfat = req['backfat']  # 字符串
         print(req_pigid)
         print(type(req_backfat))
         change_pig = FoodQuantity.objects.get(pigid=req_pigid)
         change_pig.backfat = req['backfat']
         change_pig.algo_quantity = algo_backfat(float(req['backfat']))
         change_pig.save()
-        return JsonResponse({'code':'成功'},status=200)
+        return JsonResponse({'code': '成功'}, status=200)
 
-    def put(self,request):
-        req = json.loads(request.body)
-        print(req)
+    def put(self, request):
+        req = request.data
         req_pigid = req['pigid']
         req_set_quantity = req['setnum']
         change_pig = FoodQuantity.objects.get(pigid=req_pigid)
         change_pig.set_quantity = req_set_quantity
         change_pig.save()
-        return JsonResponse({'code':'成功'},status=200)
+        return JsonResponse({'code': '成功'}, status=200)
 
-    def delete(self,request):
-        return JsonResponse({'code':'成功'},status=200)
+    def delete(self, request):
+        return JsonResponse({'code': '成功'}, status=200)
 
-    def patch(self,request):
-        return JsonResponse({'code':'成功'},status=200)
+    def patch(self, request):
+        return JsonResponse({'code': '成功'}, status=200)

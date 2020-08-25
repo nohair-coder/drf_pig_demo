@@ -1,74 +1,8 @@
-from django.db import models
-
-# Create your models here.
-
-
-# class Message(object):
-#     def __init__(self, timestamp=0.0, is_remote_frame=False, extended_id=True,
-#                  is_error_frame=False, arbitration_id=0, dlc=None, data=None):
-#         self.timestamp = timestamp
-#         self.id_type = extended_id
-#         self.is_extended_id = extended_id
-#         self.is_remote_frame = is_remote_frame
-#         self.is_error_frame = is_error_frame
-#         self.arbitration_id = arbitration_id
-#         if data is None or is_remote_frame:
-#             self.data = bytearray()
-#         elif isinstance(data, bytearray):
-#             self.data = data
-#         else:
-#             try:
-#                 self.data = bytearray(data)
-#             except TypeError:
-#                 err = "Couldn't create message from {} ({})".format(data, type(data))
-#                 raise TypeError(err)
-#         if dlc is None:
-#             self.dlc = len(self.data)
-#         else:
-#             self.dlc = dlc
-#     def __str__(self):
-#         field_strings = ["Timestamp: {0:15.6f}".format(self.timestamp)]
-#         if self.id_type:
-#             # Extended arbitrationID
-#             arbitration_id_string = "ID: {0:08x}".format(self.arbitration_id)
-#         else:
-#             arbitration_id_string = "ID: {0:04x}".format(self.arbitration_id)
-#         field_strings.append(arbitration_id_string.rjust(12, " "))
-
-#         flag_string = " ".join([
-#             "X" if self.id_type else "S",
-#             "E" if self.is_error_frame else " ",
-#             "R" if self.is_remote_frame else " ",
-#         ])
-#         field_strings.append(flag_string)
-#         field_strings.append("DLC: {0:d}".format(self.dlc))
-#         data_strings = []
-#         if self.data is not None:
-#             for index in range(0, min(self.dlc, len(self.data))):
-#                 data_strings.append("{0:02x}".format(self.data[index]))
-#         if data_strings: # if not empty
-#             field_strings.append(" ".join(data_strings).ljust(24, " "))
-#         else:
-#             field_strings.append(" " * 24)
-
-#         if (self.data is not None) and (self.data.isalnum()):
-#             try:
-#                 field_strings.append("'{}'".format(self.data.decode('utf-8')))
-#             except UnicodeError:
-#                 pass
-
-#         return "    ".join(field_strings).strip()
-#     def __len__(self):
-#         return len(self.data)
-#     def __bool__(self):
-#         return True
-#     def __nonzero__(self):
-#         return self.__bool__()
-
-
 import logging
 import struct
 import time
+# Create your models here.
+
 
 logger = logging.getLogger(__name__)
 

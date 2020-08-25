@@ -14,12 +14,13 @@ class StationCheck(APIView):
     def post(self, request):
         try:
             req = request.data
-            print(req)
-            existStation = StationInfo.objects.filter(build_unit_station=req).first()
+            req_build_unit_station = req['build_unit_station']
+            # print(req_build_unit_station)
+            existStation = StationInfo.objects.filter(build_unit_station=req_build_unit_station).first()
             if existStation == None:
                 S = StationInfo()
-                S.build_unit_station = req
-                # S.save()
+                S.build_unit_station = req_build_unit_station
+                S.save()
                 return JsonResponse({'code': '饲喂站添加成功'}, status=status.HTTP_200_OK)
             else:
                 return JsonResponse({'code': '饲喂站已存在,请重新输入'}, status=201)

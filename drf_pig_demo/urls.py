@@ -18,5 +18,8 @@ from django.urls import path, re_path, include
 urlpatterns = [
     path('system/', include('apps.pigsystem.urls')),
     path('login/', include('apps.login.urls')),
-    path('station/', include('apps.station.urls'))
+    path('station/', include('apps.station.urls')),
+    path('pigbase/', include('apps.pigbase.urls')),
+    path('setintake/', include('apps.food_quantity.urls')),
+    path('intakedata/', include('apps.pigintake.urls'))
 ]

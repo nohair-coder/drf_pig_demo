@@ -3,14 +3,17 @@ from ..food_quantity.models import FoodQuantity
 from .logic import write_pigbase, write_backfat, write_foodquantity, delete_pigbase
 from ..common.input_check import is_none
 from django.http import JsonResponse
-from django.views import View
+from rest_framework.views import APIView
+from utils.jwt_token.jwt_auth import JwtAuthorizationAuthentication
 from django.db.models import Q
 import json
 import datetime
 
 
 # Create your views here.
-class PigBaseCheck(View):
+class PigBaseCheck(APIView):
+    authentication_classes = [JwtAuthorizationAuthentication, ]
+
     def post(self, request):
         """
         入栏
@@ -18,15 +21,13 @@ class PigBaseCheck(View):
         :return:
         """
         try:
-            req = json.loads(request.body)
-            print(req)
+            req = request.data
+            # print(req)
             # print(req['BackFat']=='')
             exist_pigid = PigBase.objects.filter(
                 Q(pigid=req['PigId']) & Q(decpigtime=None))
-
             exist_earid = PigBase.objects.filter(
                 Q(stationid=req['Build_Unit_StationId']) & Q(earid=req['EarId']) & Q(decpigtime=None))
-
             if exist_pigid:
                 return JsonResponse({'code': '该母猪号已存在，请检查输入'}, status=201)
             elif exist_earid:
@@ -47,8 +48,8 @@ class PigBaseCheck(View):
         :return:
         """
         try:
-            req = request.GET['StationId']
-            # print(req)
+            req = request.query_params['StationId']
+            print(req)
             piglist = PigBase.objects.filter(stationid=req, decpigtime=None)
             stationpig = list()
             for s in piglist:
