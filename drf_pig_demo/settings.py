@@ -43,7 +43,9 @@ INSTALLED_APPS = [
     'apps.food_quantity',
     'apps.pigbase',
     'apps.station',
-    'apps.pigintake'
+    'apps.pigintake',
+    'apps.pigsystem',
+    'apps.socket_4G'
 ]
 
 MIDDLEWARE = [

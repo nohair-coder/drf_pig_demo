@@ -1,3 +1,10 @@
-from django.shortcuts import render
+import queue, socket, time, threading, pickle
+from .Raspi_4G import Raspi_run
 
-# Create your views here.
+
+exit_flag = False
+timer_cnt = 0
+
+
+
+Raspi_run()

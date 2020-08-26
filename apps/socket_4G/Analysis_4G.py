@@ -1,6 +1,7 @@
 # coding: utf8
 import time, queue, json, threading
-from learn.CAN import UsrCAN, HttpHandle
+from .logic import devicePut, devicePost, dataPost
+from .models import Message
 
 USE_EXTENDED_FRAME = False  # 使用标准帧
 FUN_CODE_BIT = 7  # 节点所占用位数
@@ -18,8 +19,8 @@ DEVICE_STATUS_CODE = ['00001', 'OFF', 'ON', '00002', '00003', '00004', '00005', 
 device_status = {}  # 设备缓存
 data_Receiving = 0  # 接收状态
 dog_count = 0  # 超时计数
-CANSendQueue = queue.Queue(16)
-CANRecvQueue = queue.Queue(64)
+Send_4G_Queue = queue.Queue(16)
+Recv_4G_Queue = queue.Queue(64)
 dataRequestQueue = queue.Queue(16)
 
 
@@ -42,8 +43,8 @@ def syncTime(msg):
                             time_stamp_struct[4] + time_stamp_struct[5] + time_stamp_struct[6] + time_stamp_struct[
                                 7]) & 0xff  # 和校验
     time_stamp_struct.pop()
-    CANSendQueue.put(
-        UsrCAN.Message(arbitration_id=msg.arbitration_id, extended_id=USE_EXTENDED_FRAME, data=time_stamp_struct))
+    Send_4G_Queue.put(
+        Message(arbitration_id=msg.arbitration_id, extended_id=USE_EXTENDED_FRAME, data=time_stamp_struct))
 
 
 def deviceStart(node_id, cmd):
@@ -58,7 +59,7 @@ def deviceStart(node_id, cmd):
         id_cmd = node_id | FUN_CODE_DICT['test_device'] << FUN_CODE_BIT
     elif cmd == 'train_device':
         id_cmd = node_id | FUN_CODE_DICT['train_device'] << FUN_CODE_BIT
-    CANSendQueue.put(UsrCAN.Message(arbitration_id=id_cmd, extended_id=USE_EXTENDED_FRAME, is_remote_frame=True))
+    Send_4G_Queue.put(Message(arbitration_id=id_cmd, extended_id=USE_EXTENDED_FRAME, is_remote_frame=True))
 
 
 def dataAnalyse(msg):
@@ -88,9 +89,9 @@ def dataAnalyse(msg):
                 data_object['end_time'] = int(time.mktime(time.strptime(data_object['end_time'], "%y%m%d%H%M%S")))
                 data_object['stationid'] = '{:0>12d}'.format(node_id)  # 12位
                 data_object['earid'] = '{:0>12d}'.format(int(data_object['earid']))  # 12位
-                CANSendQueue.put(
-                    UsrCAN.Message(arbitration_id=id_ack, extended_id=USE_EXTENDED_FRAME,
-                                   is_remote_frame=True))  # 发送成功接收应答
+                Send_4G_Queue.put(
+                    Message(arbitration_id=id_ack, extended_id=USE_EXTENDED_FRAME,
+                            is_remote_frame=True))  # 发送成功接收应答
             # print(data_object['stationid'],'ok')
             except UnicodeDecodeError:
                 print('UnicodeDecodeError')
@@ -144,11 +145,11 @@ def network_management(msg):
             'status': 'off',
             'errorcode': '00000',
         }
-        HttpHandle.devicePost(jsonobject)  # 上传新建的设备状态
+        devicePost(jsonobject)  # 上传新建的设备状态
     device_status[str(node_id)]['work_status'] = DEVICE_STATUS_CODE[msg.dlc]
     device_status[str(node_id)]['can_status'] = 2
-    CANSendQueue.put(
-        UsrCAN.Message(arbitration_id=msg.arbitration_id, extended_id=USE_EXTENDED_FRAME, is_remote_frame=True, dlc=0))
+    Send_4G_Queue.put(
+        Message(arbitration_id=msg.arbitration_id, extended_id=USE_EXTENDED_FRAME, is_remote_frame=True, dlc=0))
     # print("device_status",device_status)
 
 
@@ -175,7 +176,7 @@ def nodeMonitor():
             else:
                 json_object['status'] = 'on'
                 json_object['errorcode'] = device_status[i]['work_status']
-            HttpHandle.devicePut(json_object)  # 修改服务器记录
+            devicePut(json_object)  # 修改服务器记录
             device_status[i]['put_status'] = device_status[i]['work_status']
     with open('sys_info.txt', 'w') as fou:
         # fou.truncate()
@@ -184,7 +185,7 @@ def nodeMonitor():
 
 
 def promiseRequest(msg):
-    '处理数据包发送请求'
+    """处理数据包发送请求"""
     global data_Receiving  # 如果是0表示非接收态，否则等于正在发送的节点ID
     global dog_count
     global device_status
@@ -194,8 +195,8 @@ def promiseRequest(msg):
             dataRequestQueue.put(msg)  # 接收任务阻塞中，暂存队列
         # print(msg,'received but can not handle')
         elif time.time() - msg.timestamp < 2 and device_status[str(node_id)]['can_status'] > 0:  # 等待时间不超过2秒，并且CAN设备在线
-            CANSendQueue.put(
-                UsrCAN.Message(arbitration_id=msg.arbitration_id, extended_id=USE_EXTENDED_FRAME, is_remote_frame=True))
+            Send_4G_Queue.put(
+                Message(arbitration_id=msg.arbitration_id, extended_id=USE_EXTENDED_FRAME, is_remote_frame=True))
             data_Receiving = getNodeID(msg)  # 开始接收
             dog_count = 2
         # print(msg.arbitration_id,' start handle')
@@ -206,7 +207,7 @@ def promiseRequest(msg):
 def sysInit():
     '设备状态初始化'
     global device_status
-    with open('./sys_info.txt', 'r') as fin:
+    with open('sys_info.txt', 'r') as fin:
         try:
             text = fin.read()
             # print(text)

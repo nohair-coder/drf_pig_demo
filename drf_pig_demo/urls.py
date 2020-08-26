@@ -14,6 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.urls import path, re_path, include
+from apps.socket_4G import views
 
 urlpatterns = [
     path('system/', include('apps.pigsystem.urls')),

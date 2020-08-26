@@ -60,7 +60,7 @@ DEVICE_STATUS_CODE = ['00001', 'OFF', 'ON', '00002', '00003', '00004', '00005', 
 * data_Receiving --- 0：主机空闲，非0：主机正在接收`NodeID`为`data_Receiving`  
 * device_status --- {"<节点>",{"frame": [<第一帧>,<第二帧>...], 'frame_status':<帧计数>, "can_status": <CAN状态，非0表示正常连接>, "work_status": <设备工作信息>}}  
 
-## 函数
+## 函数````
 
 * Web应用接口
   > CANCommunication --- 'CAN模块，阻塞型'  
