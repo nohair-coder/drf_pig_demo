@@ -3,17 +3,19 @@ import time, queue, json, threading
 from .logic import devicePut, devicePost, dataPost
 from .models import Message
 
-USE_EXTENDED_FRAME = False  # 使用标准帧
-FUN_CODE_BIT = 7  # 节点所占用位数
-FUN_CODE_DICT = {  # 远程帧时的功能码
-    'heart_beat': 0,
-    'data_object_request': 1,
-    'time_stamp_request': 2,
-    'open_device': 3,
-    'close_device': 4,
-    'recv_complete': 5,
-    'train_device': 6,
-    'test_device': 7
+
+FUN_CODE_BIT = 8  # 节点所占用位数 设备号：AABBCCCC（AA-栋号；BB-单元号；CCCC-设备号）
+FUN_CODE_DICT = {  # 功能码
+    'heart_beat': 0,                # 心跳
+    'close_device': 1,              # 关机  close_device
+    'open_device': 2,               # 开机  open_device
+    'data_object_request': 3,       # 请求发送数据
+    'recv_confirm': 4,              # 确认接收到命令
+    'send_complete': 5,             # 发送数据完成
+    'sync_data_request': 6,         # 请求同步数据
+    'sync_data_complete': 7,        # 同步数据完成
+    'request_pig_in': 10,           # 母猪在下位机入站请求
+    'request_pig_change': 11        # 母猪在下位机转群请求
 }
 DEVICE_STATUS_CODE = ['00001', 'OFF', 'ON', '00002', '00003', '00004', '00005', '00006', '00007', '00008']
 device_status = {}  # 设备缓存
@@ -25,13 +27,15 @@ dataRequestQueue = queue.Queue(16)
 
 
 def getFunctionCode(msg):
-    '获取功能码'
-    return msg.arbitration_id >> FUN_CODE_BIT
+    """获取功能码"""
+    # return msg.arbitration_id >> FUN_CODE_BIT
+    return msg.FunctionCode
 
 
 def getNodeID(msg):
-    '获取节点'
-    return msg.arbitration_id & ((1 << FUN_CODE_BIT) - 1)
+    """获取节点"""
+    # return msg.arbitration_id & ((1 << FUN_CODE_BIT) - 1)
+    return msg.NodeID
 
 
 def syncTime(msg):
@@ -44,13 +48,13 @@ def syncTime(msg):
                                 7]) & 0xff  # 和校验
     time_stamp_struct.pop()
     Send_4G_Queue.put(
-        Message(arbitration_id=msg.arbitration_id, extended_id=USE_EXTENDED_FRAME, data=time_stamp_struct))
+        Message(arbitration_id=msg.arbitration_id, data=time_stamp_struct))
 
 
 def deviceStart(node_id, cmd):
     """上位机命令"""
-    global device_status
-    print(device_status)
+    # global device_status
+    # print(device_status)
     if cmd == 'open_device':
         id_cmd = node_id | FUN_CODE_DICT['open_device'] << FUN_CODE_BIT
     elif cmd == 'close_device':
@@ -59,7 +63,8 @@ def deviceStart(node_id, cmd):
         id_cmd = node_id | FUN_CODE_DICT['test_device'] << FUN_CODE_BIT
     elif cmd == 'train_device':
         id_cmd = node_id | FUN_CODE_DICT['train_device'] << FUN_CODE_BIT
-    Send_4G_Queue.put(Message(arbitration_id=id_cmd, extended_id=USE_EXTENDED_FRAME, is_remote_frame=True))
+    Send_4G_Queue.put(
+        Message(arbitration_id=id_cmd, is_remote_frame=True))
 
 
 def dataAnalyse(msg):
@@ -90,7 +95,7 @@ def dataAnalyse(msg):
                 data_object['stationid'] = '{:0>12d}'.format(node_id)  # 12位
                 data_object['earid'] = '{:0>12d}'.format(int(data_object['earid']))  # 12位
                 Send_4G_Queue.put(
-                    Message(arbitration_id=id_ack, extended_id=USE_EXTENDED_FRAME,
+                    Message(arbitration_id=id_ack,
                             is_remote_frame=True))  # 发送成功接收应答
             # print(data_object['stationid'],'ok')
             except UnicodeDecodeError:
@@ -111,7 +116,7 @@ def dataAnalyse(msg):
 
 
 def clearTemp():
-    '解除接收态'
+    """解除接收态"""
     global data_Receiving
     device_status[str(data_Receiving)]['frame'] = []
     device_status[str(data_Receiving)]['frame_status'] = 0
@@ -121,7 +126,7 @@ def clearTemp():
 
 
 def timeoutHandler():
-    '接收超时处理'
+    """接收超时处理"""
     global data_Receiving
     global dog_count
     if data_Receiving != 0:  # 正在接收中
@@ -133,7 +138,7 @@ def timeoutHandler():
 
 
 def network_management(msg):
-    '节点状态'
+    """节点状态"""
     global device_status
     node_id = getNodeID(msg)
     if str(node_id) not in device_status:  # 新建一个设备缓存
@@ -149,12 +154,11 @@ def network_management(msg):
     device_status[str(node_id)]['work_status'] = DEVICE_STATUS_CODE[msg.dlc]
     device_status[str(node_id)]['can_status'] = 2
     Send_4G_Queue.put(
-        Message(arbitration_id=msg.arbitration_id, extended_id=USE_EXTENDED_FRAME, is_remote_frame=True, dlc=0))
-    # print("device_status",device_status)
+        Message(arbitration_id=msg.arbitration_id, is_remote_frame=True, dlc=0))
 
 
 def nodeMonitor():
-    '节点监控定时函数'
+    """节点监控定时函数"""
     # 此函数由定时任务调用
     global device_status
     for i in device_status:
@@ -196,7 +200,7 @@ def promiseRequest(msg):
         # print(msg,'received but can not handle')
         elif time.time() - msg.timestamp < 2 and device_status[str(node_id)]['can_status'] > 0:  # 等待时间不超过2秒，并且CAN设备在线
             Send_4G_Queue.put(
-                Message(arbitration_id=msg.arbitration_id, extended_id=USE_EXTENDED_FRAME, is_remote_frame=True))
+                Message(arbitration_id=msg.arbitration_id, is_remote_frame=True))
             data_Receiving = getNodeID(msg)  # 开始接收
             dog_count = 2
         # print(msg.arbitration_id,' start handle')
@@ -205,7 +209,7 @@ def promiseRequest(msg):
 
 
 def sysInit():
-    '设备状态初始化'
+    """设备状态初始化"""
     global device_status
     with open('sys_info.txt', 'r') as fin:
         try:

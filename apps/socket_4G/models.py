@@ -172,15 +172,23 @@ class Message(object):
             self.is_remote_frame = False
 
 
-class Message1(object):
+class Message_4G(object):
 
     def __init__(self,
-                 dlc=None,
-                 data=None,
-                 is_fd=False,
-                 channel=None):
+                 msg_length=None,   # 信息长度
+                 data=None,         # 信息体，json格式
+                 msg_start=None,
+                 msg_end=None,
+                 station_id=None,
+                 station_status=None,
+                 func_code=None):
 
         self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())  # 格式化当前时间
+        self.msg_start = msg_start
+        self.msg_end = msg_end
+        self.station_id = station_id
+        self.station_status = station_status
+        self.func_code = func_code
 
         if data is None:
             self.data = bytearray(8)
@@ -193,113 +201,26 @@ class Message1(object):
                 err = "Couldn't create message from {} ({})".format(data, type(data))
                 raise TypeError(err)
 
-        if dlc is None:
-            self.dlc = len(self.data)
+        if msg_length is None:
+            self.msg_length = len(self.data)
         else:
-            self.dlc = dlc
+            self.msg_length = msg_length
 
-        if is_fd and self.dlc > 64:
-            logger.warning("data link count was %d but it should be less than or equal to 64", self.dlc)
-        if not is_fd and self.dlc > 8:
-            logger.warning("data link count was %d but it should be less than or equal to 8", self.dlc)
 
-    def __str__(self):
-        field_strings = ["Timestamp: {}".format(self.timestamp)]  # 输出格式化的时间
-        if self.id_type:
-            # Extended arbitrationID
-            arbitration_id_string = "ID: {0:08x}".format(self.arbitration_id)
-        else:
-            arbitration_id_string = "ID: {0:04x}".format(self.arbitration_id)
-        field_strings.append(arbitration_id_string.rjust(12, " "))
 
-        flag_string = " ".join([
-            "X" if self.id_type else "S",
-            "R" if self.is_remote_frame else " ",
-        ])
-
-        field_strings.append(flag_string)
-
-        field_strings.append("DLC: {0:d}".format(self.dlc))
-        data_strings = []
-        if self.data is not None:
-            for index in range(0, min(self.dlc, len(self.data))):
-                data_strings.append("{0:02x}".format(self.data[index]))
-        if data_strings:  # if not empty
-            field_strings.append(" ".join(data_strings).ljust(24, " "))
-        else:
-            field_strings.append(" " * 24)
-
-        if (self.data is not None) and (self.data.isalnum()):
-            try:
-                field_strings.append("'{}'".format(self.data.decode('utf-8')))
-            except UnicodeError:
-                pass
-
-        return "    ".join(field_strings).strip()
-
-    def __len__(self):
-        return len(self.data)
-
-    def __bool__(self):
-        return True
-
-    def __nonzero__(self):
-        return self.__bool__()
-
-    def __repr__(self):
-        data = ["{:#02x}".format(byte) for byte in self.data]
-        args = ["timestamp={}".format(self.timestamp),
-                "is_remote_frame={}".format(self.is_remote_frame),
-                "extended_id={}".format(self.id_type),
-                "arbitration_id={:#x}".format(self.arbitration_id),
-                "dlc={}".format(self.dlc),
-                "data=[{}]".format(", ".join(data))]
-        return "can.Message({})".format(", ".join(args))
-
-    def __eq__(self, other):
-        return (isinstance(other, self.__class__) and
-                self.arbitration_id == other.arbitration_id and
-                # self.timestamp == other.timestamp and # allow the timestamp to differ
-                self.id_type == other.id_type and
-                self.dlc == other.dlc and
-                self.data == other.data and
-                self.is_remote_frame == other.is_remote_frame)
-
-    def __hash__(self):
-        return hash((
-            self.arbitration_id,
-            # self.timestamp # excluded, like in self.__eq__(self, other)
-            self.id_type,
-            self.dlc,
-            self.data,
-            self.is_remote_frame,
-        ))
-
-    def __format__(self, format_spec):
-        return self.__str__()
-
-    def msg_to_json(self):
+    def msg_to_byte(self):
         """消息转字节"""
         databyte = bytearray(13)
-        databyte[0] = self.is_extended_id << 7 | self.is_remote_frame << 6 | self.dlc
+        databyte[0] = self.is_extended_id << 7 | self.is_remote_frame << 6 | self.msg_length
         databyte[4:0:-1] = struct.pack('i', self.arbitration_id)
         databyte[5:13] = self.data
         return databyte
 
-    def json_to_msg(self, databyte):
+    def byte_to_msg(self, databyte):
         """字节转消息"""
         # print(list(databyte))
-        self.arbitration_id = struct.unpack('i', databyte[4:0:-1])[0]
-        self.dlc = databyte[0] & 0x0f
-        self.data = databyte[5:5 + self.dlc]
-        self.timestamp = time.time()
-        if databyte[0] & 0x80 == 0x80:
-            self.id_type = True
-            self.is_extended_id = True
-        else:
-            self.id_type = False
-            self.is_extended_id = False
-        if databyte[0] & 0x40 == 0x40:
-            self.is_remote_frame = True
-        else:
-            self.is_remote_frame = False
+        self.msg_start = databyte[0]
+        self.station_id = databyte[1:10]
+        self.station_status = databyte[10]
+        self.func_code = databyte[11:13]
+        self.msg_end = databyte[13]
