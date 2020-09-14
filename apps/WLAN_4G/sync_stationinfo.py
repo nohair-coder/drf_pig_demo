@@ -3,7 +3,7 @@
 import time
 from ..station.models import StationInfo
 from threading import Timer
-from .Raspi_4G import getDeviceStatus
+from .Socket_4G import getDeviceStatus
 
 
 def get_all_station():

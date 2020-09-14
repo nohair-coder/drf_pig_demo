@@ -13,7 +13,9 @@ class IntakeData(APIView):
         return JsonResponse({'code': '成功'}, status=status.HTTP_200_OK)
 
     def post(self, request):
-        pass
+        req = request.data
+        print(req, "IntakeData")
+        return JsonResponse({'code': True}, status=status.HTTP_200_OK)
 
     def put(self, request):
         pass

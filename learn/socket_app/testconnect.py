@@ -3,8 +3,7 @@
 
 from socket import *
 import json
-import time
-from socket_app.util import asyncFunc, write_stationinfo, write_piginfo
+from learn.socket_app import asyncFunc, write_stationinfo, write_piginfo
 
 # socket_host = 'localhost'
 socket_host = '192.168.0.107'

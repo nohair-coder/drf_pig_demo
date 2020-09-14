@@ -17,7 +17,6 @@ class SetIntake(APIView):
     def get(self, request):
         req = request.query_params['StationId']
         try:
-            # print(req)
             piglist = PigBase.objects.filter(stationid=req, decpigtime=None)
             stationpig = list()
             for s in piglist:

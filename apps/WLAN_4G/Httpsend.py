@@ -2,13 +2,16 @@
 import requests
 import json
 
+baseURL = 'http://localhost:8000/'
+
 
 def dataPost(json_object):
-    '数据上传'
+    """数据上传"""
     try:
-        r = requests.post('http://localhost:5000/admin/pigbase/', json=json_object)
+        r = requests.post(baseURL+'intakedata/', json=json_object)
+        # r = requests.post("http://httpbin.org/post", data=payload)
         ack = json.loads(r.text)
-        if (ack['success'] != True):
+        if ack['code'] != True:
             print('dataPost', ack)
             print('dataPost err', json_object)
             return False
@@ -20,9 +23,9 @@ def dataPost(json_object):
 
 
 def devicePost(json_object):
-    '设备新增'
+    """设备新增"""
     try:
-        r = requests.post('http://localhost:5000/admin/stationinfo/', json=json_object)
+        r = requests.post(baseURL+'stationinfo/', json=json_object)
         ack = json.loads(r.text)
         if (ack['success'] != True):
             print('devicePost', ack)
@@ -32,9 +35,9 @@ def devicePost(json_object):
 
 
 def devicePut(json_object):
-    '设备状态修改'
+    """设备状态修改"""
     try:
-        r = requests.put('http://localhost:5000/admin/stationinfo/', json=json_object)
+        r = requests.put(baseURL+'stationinfo/', json=json_object)
         ack = json.loads(r.text)
         if (ack['success'] != True):
             print('devicePut', ack)

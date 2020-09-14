@@ -224,3 +224,4 @@ class Message_4G(object):
         self.station_status = databyte[10]
         self.func_code = databyte[11:13]
         self.msg_end = databyte[13]
+
