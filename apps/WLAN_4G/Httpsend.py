@@ -18,7 +18,7 @@ def dataPost(json_object):
         else:
             return True
     except:
-        print('connect failed !')
+        print('dataPost failed !')
         return False
 
 
@@ -52,7 +52,11 @@ def pigPost(json_object):
         r = requests.post(baseURL+'pigbase/4G/', json=json_object)
         ack = json.loads(r.text)
         if ack['code'] != 'success':
-            print('devicePost', ack['code'])
+            print('pigPost', ack)
+            print('pigPost err', json_object)
+            return False
+        else:
+            return True
     except:
-        print('connect failed !')
+        print('pigPost failed !')
         return False

@@ -2,7 +2,7 @@
 import queue, socket, time, threading, pickle, socketserver
 from ..WLAN_4G import Analysis_4G
 from .models import Message, Message_4G
-from .Httpsend import dataPost, devicePost, devicePut
+from .Httpsend import dataPost, devicePost, devicePut, pigPost
 import json
 
 exit_flag = False
@@ -79,8 +79,20 @@ def serverSend():
     while not exit_flag:
         try:
             data_obj = Analysis_4G.serverSendQueue.get(timeout=3)
-            if not dataPost(data_obj):
-                Analysis_4G.serverSendQueue.put(data_obj)
+            print(data_obj)
+            if data_obj['func'] == 'intake':
+                if not dataPost(data_obj):
+                    print('serverSend dataPost Error')
+            elif data_obj['func'] == 'addpig':
+                if not pigPost(data_obj):
+                    print('serverSend pigPost Error')
+            elif data_obj['func'] == 'changestation':
+                pass
+            elif data_obj['func'] == 'changedata':
+                pass
+            # if not dataPost(data_obj):
+            #     print('serverSend Error')
+                # Analysis_4G.serverSendQueue.put(data_obj)
             time.sleep(0.1)
         except:
             pass

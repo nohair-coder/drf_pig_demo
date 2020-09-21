@@ -1,1 +1,1 @@
-{"01010001": {"frame": [], "frame_status": 0, "socket_status": 0, "work_status": "00008", "put_status": "00008", "data_Receiving": 0, "dog_count": 2, "addr": ["127.0.0.1", 9998]}}
+{"01010001": {"frame": [], "frame_status": 0, "socket_status": 1, "work_status": "ON", "put_status": "ON", "data_Receiving": 0, "dog_count": 2, "addr": ["127.0.0.1", 9999]}, "01010002": {"frame": [], "frame_status": 0, "socket_status": 1, "work_status": "ON", "put_status": "ON", "data_Receiving": 0, "dog_count": 0, "addr": ["127.0.0.1", 8999]}}

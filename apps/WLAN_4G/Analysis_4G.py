@@ -142,6 +142,7 @@ def dataAnalyse(msg):
         try:
             func = msg['func']
             if func == 'intake':
+                data_object['func'] = func
                 data_object['start_time'] = time.strftime("%Y-%m-%d %H:%M:%S",
                                                           time.strptime(msg['start_time'],
                                                                         "%Y%m%d%H%M%S"))
@@ -150,20 +151,27 @@ def dataAnalyse(msg):
                 data_object['stationid'] = node_id  # 8位
                 data_object['food_intake'] = msg['food_intake']
                 data_object['earid'] = msg['earid']  # 8位
-                serverSendQueue.put(data_object)
             elif func == 'addpig':
+                data_object['func'] = func
                 data_object['stationid'] = msg['stationid']  # 饲喂站号
                 data_object['earid'] = msg['earid']  # 耳标号
                 data_object['breedtime'] = msg['mating_date']  # 配种日期
                 data_object['gesage'] = msg['parity']  # 胎龄
                 data_object['backfat'] = msg['backfat']  # 背膘厚
-                pigPost(data_object)
             elif func == 'changestation':
-                pass
+                data_object['func'] = func
+                data_object['stationid'] = msg['stationid']  # 旧饲喂站号
+                data_object['earid'] = msg['earid']  # 旧耳标号
+                data_object['new_stationid'] = msg['new_stationid']  # 新饲喂站号
+                data_object['new_earid'] = msg['new_earid']  # 新饲喂站号
             elif func == 'asyncdata':
-                pass
+                data_object['func'] = func
             elif func == 'changedata':
-                pass
+                data_object['func'] = func
+                data_object['stationid'] = msg['stationid']  # 饲喂站号
+                data_object['earid'] = msg['earid']  # 耳标号
+                data_object['revised_feed_intake '] = msg['revised_feed_intake ']  # 修订采食量
+                data_object['backfat'] = msg['backfat']  # 背膘厚
             else:
                 print(func + 'dataAnalyse error')
                 data_object = {}
@@ -172,11 +180,12 @@ def dataAnalyse(msg):
             print(e)
             data_object = {}
     if data_object != {}:
-        device_status[node_id]['data_Receiving'] = 0
+        serverSendQueue.put(data_object)
         Send_4G_Queue.put([responseMsg(node_id), device_status[node_id]['addr']])
         with open('data_object.txt', 'w') as f:
             # Pickle the 'data' dictionary using the highest protocol available.
             f.write(json.dumps(data_object))
+        clearTemp(node_id)
     else:
         print('data_obj is null')
 
@@ -254,8 +263,9 @@ def nodeMonitor():
                 json_object['errorcode'] = device_status[i]['work_status']
             # devicePut(json_object)  # 修改服务器记录
             device_status[i]['put_status'] = device_status[i]['work_status']
-    with open('sys_info.txt', 'w') as fou:
-        fou.write(json.dumps(device_status))
+    if device_status != {}:
+        with open('sys_info.txt', 'w') as fou:
+            fou.write(json.dumps(device_status))
     print("device_status:", device_status)
 
 
@@ -270,4 +280,13 @@ def Analysis_sysInit():
         except json.decoder.JSONDecodeError:
             print('sys_info create')
     for i in device_status:
-        device_status[i] = {"frame": [], 'frame_status': 0, "can_status": 0, "work_status": 0, "put_status": 0}
+        device_status[i] = {
+            "frame": [],            # 缓存记录数据
+            'frame_status': 0,      # 缓存帧计数
+            "socket_status": 0,     # 网络通信状态
+            "work_status": 0,       # 饲喂站工作状态
+            "put_status": 0,        # 服务端饲喂站状态
+            'data_Receiving': 0,    # 饲喂站接收数据状态
+            'dog_count': 0,         # 超时计数
+            'addr': 0               # ip地址
+        }
