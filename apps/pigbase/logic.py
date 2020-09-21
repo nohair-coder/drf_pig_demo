@@ -3,6 +3,8 @@ from apps.pigbase.models import PigBase
 from apps.food_quantity.models import FoodQuantity, Backfat
 from .pig_id_kind import pig_id_kind
 import datetime
+import random
+import string
 
 
 def algo_backfat(backfat):
@@ -85,3 +87,8 @@ def delete_pigbase(req):
     sub_pig = PigBase.objects.get(pigid=req)
     sub_pig.decpigtime = now_time
     sub_pig.save()
+
+
+def generate_pigid_str():
+    salt = ''.join(random.sample(string.ascii_letters + string.digits, 8))
+    return salt

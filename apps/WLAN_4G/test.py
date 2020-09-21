@@ -19,23 +19,7 @@
 # b = {}
 # print(type(a) == str)
 # print(type(b) == dict)
-
 import time
-import requests
-import json
-baseURL = 'http://localhost:8000/'
 
-
-msg = {
-    "func": "intake",
-    "stationid": "01020003",
-    "earid": "999999999999",
-    "food_intake": 100,
-    "start_time": "190304050607",
-    "end_time": "190304050607"
-}
-
-print(time.strftime("%Y-%m-%d %H:%M:%S",
-                    time.strptime(msg['start_time'],
-                                  "%Y%m%d%H%M%S")))
-
+now_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+print(now_time)

@@ -10,7 +10,6 @@ from .logic import is_none, caldate, final, algo_backfat
 # Create your views here.
 
 
-
 class SetIntake(APIView):
     authentication_classes = [JwtAuthorizationAuthentication, ]
 
@@ -43,8 +42,8 @@ class SetIntake(APIView):
         req = request.data
         req_pigid = req['pigid']
         req_backfat = req['backfat']  # 字符串
-        print(req_pigid)
-        print(type(req_backfat))
+        # print(req_pigid)
+        # print(type(req_backfat))
         change_pig = FoodQuantity.objects.get(pigid=req_pigid)
         change_pig.backfat = req['backfat']
         change_pig.algo_quantity = algo_backfat(float(req['backfat']))

@@ -7,4 +7,4 @@ from django.contrib import admin
 #
 # 找到端口进程pid： netstat -nao | findstr 7788
 #
-# 杀死进程pid：  taskkill /pid 11448 /f
+# 杀死进程pid：  taskkill /pid 6312 /f

@@ -3,6 +3,7 @@ import queue, socket, time, threading, pickle, socketserver
 from ..WLAN_4G import Analysis_4G
 from .models import Message, Message_4G
 from .Httpsend import dataPost, devicePost, devicePut
+import json
 
 exit_flag = False
 timer_cnt = 0
@@ -63,19 +64,13 @@ def Handle_4G():
                 elif func_code == Analysis_4G.FUN_CODE_DICT['data_object_request']:  # 03开始接收数据
                     Analysis_4G.promiseRequest(msg, Addr_4G)
                 elif data['func_code'] == Analysis_4G.FUN_CODE_DICT['send_complete']:  # 05 接收数据完成
-                    Analysis_4G.closePromiseRequest(msg, Addr_4G)
+                    pass
                 elif func_code == Analysis_4G.FUN_CODE_DICT['sync_data_request']:  # 06 请求同步数据
                     pass
                 else:
                     print('Node', Analysis_4G.getFunctionCode(msg)['func_code'], ' can not identify !')
             else:
-                data_obj = Analysis_4G.dataAnalyse(eval(msg))
-                if data_obj != {}:
-                    with open('data_object.pickle', 'wb') as f:
-                        # Pickle the 'data' dictionary using the highest protocol available.
-                        pickle.dump(data_obj, f, pickle.HIGHEST_PROTOCOL)
-                else:
-                    print('data_obj is null')
+                Analysis_4G.dataAnalyse(eval(msg))
 
 
 def serverSend():
@@ -98,24 +93,12 @@ def timer():
         timer_thread = threading.Timer(0.01, timer)
         timer_thread.start()
         timer_cnt += 1
-        if timer_cnt > 0xffffffff:
+        if timer_cnt > 100000:
             timer_cnt = 0
         if timer_cnt % 1000 == 1:
             Analysis_4G.nodeMonitor()
         if timer_cnt % 100 == 1:
             Analysis_4G.timeoutHandler()
-
-
-def Socket_4G_run():
-    Analysis_4G.sysInit()
-    print("4Gsys init")
-    socket_4G_thread = threading.Thread(target=Init_4GSocket)
-    socket_4G_thread.start()
-    Hand4GThread = threading.Thread(target=Handle_4G)
-    Hand4GThread.start()
-    serverSendThread = threading.Thread(target=serverSend)
-    serverSendThread.start()
-    timer()
 
 
 def setDeviceStatus(cmd):
@@ -135,9 +118,7 @@ def getDeviceStatus(nodeId):
         not_exit_station_statue = {
             'work_status': 'OFF'
         }
-
         status = Analysis_4G.device_status.get(str(int(nodeId)), not_exit_station_statue)
-
         if status['work_status'] == 'OFF':
             res = ['OFF', '00000']
         elif status['work_status'] == 'ON':
@@ -149,3 +130,13 @@ def getDeviceStatus(nodeId):
         print('获取测定站状态失败 ----------------->>>')
         print(e)
         return False
+
+
+print("4Gsys init")
+socket_4G_thread = threading.Thread(target=Init_4GSocket)
+socket_4G_thread.start()
+Hand4GThread = threading.Thread(target=Handle_4G)
+Hand4GThread.start()
+serverSendThread = threading.Thread(target=serverSend)
+serverSendThread.start()
+timer()

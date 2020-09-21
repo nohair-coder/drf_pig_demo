@@ -1,13 +1,13 @@
 # coding: utf8
 import time, queue, json, threading, pickle
-from .Httpsend import devicePut, devicePost, dataPost
+from .Httpsend import devicePut, devicePost, dataPost, pigPost
 from .models import Message
 
 FUN_CODE_DICT = {  # 功能码
     'heart_beat': 0,  # 心跳
     'close_device': 1,  # 关机  close_device
     'open_device': 2,  # 开机  open_device
-    'data_object_request': 3,  # 请求发送数据
+    'data_object_request': 3,  # 请求发送json数据
     'recv_confirm': 4,  # 确认接收到命令
     'send_complete': 5,  # 发送数据完成
     'sync_data_request': 6,  # 请求同步数据
@@ -20,11 +20,12 @@ Recv_4G_Queue = queue.Queue(64)
 dataRequestQueue = queue.Queue(32)
 
 try:
-    with open('data_object.pickle', 'rb') as f:
+    with open('data_object.txt', 'r') as f:
+        text = f.read()
+        # serverSendQueue = json.loads(text)
+        serverSendQueue = queue.Queue()
         # The protocol version used is detected automatically, so we do not
         # have to specify it.
-        # serverSendQueue = pickle.load(f)
-        serverSendQueue = queue.Queue()
 except:
     serverSendQueue = queue.Queue()
 
@@ -48,7 +49,7 @@ def getFunctionCode(msg):
 
 def getWorkStatus(msg):
     """获取普通格式节点"""
-    return msg[9]
+    return int(msg[9])
 
 
 def getNodeID(msg):
@@ -61,10 +62,8 @@ def getJsonNodeID(msg):
     return msg['stationid']
 
 
-def responseMsg(msg):
-    nodeid = getFunctionCode(msg)['station_id']
-    node_status = getFunctionCode(msg)['station_status']
-    id_ack = '$' + nodeid + node_status + '04' + '#'
+def responseMsg(nodeid):
+    id_ack = '$' + nodeid + '2' + '04' + '#'
     return id_ack
 
 
@@ -105,7 +104,7 @@ def promiseRequest(msg, Addr_4G):
             dataRequestQueue.put([msg, Addr_4G])  # 接收任务阻塞中，暂存队列
         elif device_status[node_id]['socket_status'] > 0:  # 等待时间不超过2秒，并且4G设备在线
             device_status[node_id]['data_Receiving'] = node_id  # 开始接收
-            Send_4G_Queue.put([responseMsg(msg), Addr_4G])
+            Send_4G_Queue.put([responseMsg(node_id), Addr_4G])
             device_status[node_id]['dog_count'] = 2
         else:
             print("Can't handle it", node_id)  # 超时不接收
@@ -118,12 +117,12 @@ def closePromiseRequest(msg, Addr_4G):
     if node_id in device_status and device_status[node_id]['frame'] == [] and device_status[node_id][
         'frame_status'] == 0:  # 设备已运行然后接收到数据
         device_status[node_id]['data_Receiving'] = 0
-        Send_4G_Queue.put([responseMsg(msg), Addr_4G])
+        Send_4G_Queue.put([responseMsg(node_id), Addr_4G])
 
 
 # {
 #     "func": "intake",
-#     "stationid": "01020003",
+#     "stationid": "01010001",
 #     "earid": "999999999999",
 #     "food_intake": 100,
 #     "start_time": "190304050607",
@@ -136,21 +135,16 @@ def dataAnalyse(msg):
     data_object = {}
     global device_status
     node_id = getJsonNodeID(msg)  # 获得节点ID
-    if device_status[node_id]['data_Receiving'] == node_id and device_status[node_id]['data_Receiving'] != 0:  # 处于接收态
-        # device_status[node_id]['frame'].append(msg)  # 记录数据
-        # device_status[node_id]['frame_status'] += 1  # 帧计数
+    if True:
+        # if device_status[node_id]['data_Receiving'] == node_id and device_status[node_id]['data_Receiving'] != 0:
+        # 处于接收态 device_status[node_id]['frame'].append(msg)  # 记录数据 device_status[node_id]['frame_status'] += 1  # 帧计数
         device_status[node_id]['dog_count'] = 2  # 超时标志清除
         try:
             func = msg['func']
             if func == 'intake':
-                try:
-                    data_object['start_time'] = time.strftime("%Y-%m-%d %H:%M:%S",
-                                                              time.strptime(msg['start_time'],
-                                                                            "%Y%m%d%H%M%S"))
-                except ValueError:
-                    data_object['start_time'] = time.strftime("%Y-%m-%d %H:%M:%S",
-                                                              time.strptime(msg['end_time'],
-                                                                            "%Y%m%d%H%M%S"))
+                data_object['start_time'] = time.strftime("%Y-%m-%d %H:%M:%S",
+                                                          time.strptime(msg['start_time'],
+                                                                        "%Y%m%d%H%M%S"))
                 data_object['end_time'] = time.strftime("%Y-%m-%d %H:%M:%S",
                                                         time.strptime(msg['end_time'], "%Y%m%d%H%M%S"))
                 data_object['stationid'] = node_id  # 8位
@@ -158,7 +152,12 @@ def dataAnalyse(msg):
                 data_object['earid'] = msg['earid']  # 8位
                 serverSendQueue.put(data_object)
             elif func == 'addpig':
-                pass
+                data_object['stationid'] = msg['stationid']  # 饲喂站号
+                data_object['earid'] = msg['earid']  # 耳标号
+                data_object['breedtime'] = msg['mating_date']  # 配种日期
+                data_object['gesage'] = msg['parity']  # 胎龄
+                data_object['backfat'] = msg['backfat']  # 背膘厚
+                pigPost(data_object)
             elif func == 'changestation':
                 pass
             elif func == 'asyncdata':
@@ -168,18 +167,18 @@ def dataAnalyse(msg):
             else:
                 print(func + 'dataAnalyse error')
                 data_object = {}
-        # print(data_object['stationid'],'ok')
-        except UnicodeDecodeError:
-            print('UnicodeDecodeError')
+        except Exception as e:
+            print('dataAnalyseError')
+            print(e)
             data_object = {}
-        except json.decoder.JSONDecodeError:
-            print(node_id, 'JSONDecodeError:')
-            data_object = {}
-        except ValueError:
-            print('value error ', device_status[node_id])
-            data_object = {}
-        # clearTemp(node_id)  # 清除缓存
-    return data_object
+    if data_object != {}:
+        device_status[node_id]['data_Receiving'] = 0
+        Send_4G_Queue.put([responseMsg(node_id), device_status[node_id]['addr']])
+        with open('data_object.txt', 'w') as f:
+            # Pickle the 'data' dictionary using the highest protocol available.
+            f.write(json.dumps(data_object))
+    else:
+        print('data_obj is null')
 
 
 def clearTemp(node_id):
@@ -206,13 +205,14 @@ def network_management(msg, Addr_4G):
     global device_status
     node_id = getNodeID(msg)
     if node_id not in device_status:  # 新建一个设备缓存
-        device_status[node_id] = {"frame": [],  # 记录数据
-                                  'frame_status': 0,  # 帧计数
-                                  "socket_status": 0,
-                                  "work_status": 0,
-                                  "put_status": 0,
-                                  'data_Receiving': 0,
-                                  'dog_count': 0  # 超时计数
+        device_status[node_id] = {"frame": [],  # 缓存记录数据
+                                  'frame_status': 0,  # 缓存帧计数
+                                  "socket_status": 0,  # 网络通信状态
+                                  "work_status": 0,  # 饲喂站工作状态
+                                  "put_status": 0,  # 服务端饲喂站状态
+                                  'data_Receiving': 0,  # 饲喂站接收数据状态
+                                  'dog_count': 0,   # 超时计数
+                                  'addr': 0  # ip地址
                                   }
         jsonobject = {
             'stationid': node_id,
@@ -220,12 +220,12 @@ def network_management(msg, Addr_4G):
             'status': 'off',
             'errorcode': '00000',
         }
-        # devicePost(jsonobject)  # 上传新建的设备状态
-    device_status[node_id]['work_status'] = getWorkStatus(msg)
+        devicePost(jsonobject)  # 上传新建的设备状态
+    device_status[node_id]['work_status'] = DEVICE_STATUS_CODE[getWorkStatus(msg)]
     device_status[node_id]['socket_status'] = 2
+    device_status[node_id]['addr'] = Addr_4G
     Send_4G_Queue.put(
-        # [Message(arbitration_id=msg.arbitration_id, is_remote_frame=True, dlc=0), Addr_4G]
-        [msg, Addr_4G]
+        [msg, device_status[node_id]['addr']]
     )
 
 
@@ -235,13 +235,13 @@ def nodeMonitor():
     global device_status
     for i in device_status:
         # print(i,'asdsadsadsad')
-        if device_status[i]['socket_status'] > 0:  # 设备在线
+        if device_status[i]['socket_status'] > 0:  # 设备在线i
             device_status[i]['socket_status'] -= 1
         elif i != '255':  # 设备断线
             device_status[i]['work_status'] = DEVICE_STATUS_CODE[9]
         if device_status[i]['work_status'] != device_status[i]['put_status']:  # 本地状态和服务器状态不一致
             json_object = {
-                'stationid': '{:0>12d}'.format(int(i)),
+                'stationid': str(i),
                 'comment': '',
                 'errorcode': '00000'
             }
@@ -252,21 +252,22 @@ def nodeMonitor():
             else:
                 json_object['status'] = 'on'
                 json_object['errorcode'] = device_status[i]['work_status']
-            devicePut(json_object)  # 修改服务器记录
+            # devicePut(json_object)  # 修改服务器记录
             device_status[i]['put_status'] = device_status[i]['work_status']
-    # with open('sys_info.txt', 'w') as fou:
-    #     fou.write(json.dumps(device_status))
+    with open('sys_info.txt', 'w') as fou:
+        fou.write(json.dumps(device_status))
     print("device_status:", device_status)
 
 
-def sysInit():
+def Analysis_sysInit():
     """设备状态初始化"""
     global device_status
-    # with open('sys_info.txt', 'r') as fin:
-    #     try:
-    #         text = fin.read()
-    #         device_status = json.loads(text)
-    #     except json.decoder.JSONDecodeError:
-    #         print('sys_info create')
+    with open('sys_info.txt', 'r') as fin:
+        try:
+            text = fin.read()
+            # print(text)
+            device_status = json.loads(text)
+        except json.decoder.JSONDecodeError:
+            print('sys_info create')
     for i in device_status:
         device_status[i] = {"frame": [], 'frame_status': 0, "can_status": 0, "work_status": 0, "put_status": 0}

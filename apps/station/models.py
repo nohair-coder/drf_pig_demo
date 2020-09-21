@@ -8,7 +8,7 @@ class StationInfo(models.Model):
         ('off', '已关机'),  # 黑色
         ('error', '有故障')  # 红色
     )
-    build_unit_station = models.CharField(max_length=10, unique=True, verbose_name='饲喂站号')
+    build_unit_station = models.CharField(max_length=8, unique=True, verbose_name='饲喂站号')
     status = models.CharField(choices=choice, default='off', max_length=8, verbose_name="状态")
     temperature = models.FloatField(default=25, verbose_name='温度')  # 温度
     humidity = models.FloatField(default=0.4, verbose_name='温度')  # 湿度

@@ -1,10 +1,8 @@
 import queue, socket, time, threading, pickle
-from .Socket_4G import Socket_4G_run
 from .sync_stationinfo import sync_stationinfo
-
-exit_flag = False
-timer_cnt = 0
+from .Analysis_4G import Analysis_sysInit
 
 
-Socket_4G_run()
+Analysis_sysInit()
 sync_stationinfo()
+

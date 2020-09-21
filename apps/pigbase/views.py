@@ -1,6 +1,6 @@
 from .models import PigBase
 from ..food_quantity.models import FoodQuantity
-from .logic import write_pigbase, write_backfat, write_foodquantity, delete_pigbase
+from .logic import write_pigbase, write_backfat, write_foodquantity, delete_pigbase, generate_pigid_str
 from ..common.input_check import is_none
 from django.http import JsonResponse
 from rest_framework.views import APIView
@@ -8,6 +8,7 @@ from utils.jwt_token.jwt_auth import JwtAuthorizationAuthentication
 from django.db.models import Q
 import json
 import datetime
+from rest_framework import status
 
 
 # Create your views here.
@@ -22,7 +23,6 @@ class PigBaseCheck(APIView):
         """
         try:
             req = request.data
-            # print(req)
             # print(req['BackFat']=='')
             exist_pigid = PigBase.objects.filter(
                 Q(pigid=req['PigId']) & Q(decpigtime=None))
@@ -49,7 +49,7 @@ class PigBaseCheck(APIView):
         """
         try:
             req = request.query_params['StationId']
-            print(req)
+            # print(req)
             piglist = PigBase.objects.filter(stationid=req, decpigtime=None)
             stationpig = list()
             for s in piglist:
@@ -136,3 +136,22 @@ def UploadPig(request):
     else:
         print(321)
         return JsonResponse({'code': '不是POST'}, status=201)
+
+
+class PigBase4G(APIView):
+
+    def get(self, request):
+        pass
+
+    def post(self, request):
+        req = request.data
+        print(req)
+        fake_pig_id = generate_pigid_str()
+        print(fake_pig_id)
+        return JsonResponse({'code': 'success'}, status=status.HTTP_200_OK)
+
+    def delete(self, request):
+        pass
+
+    def put(self, request):
+        pass

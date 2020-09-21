@@ -8,14 +8,12 @@ from utils.jwt_token.jwt_auth import JwtAuthorizationAuthentication
 
 # Create your views here.
 class StationCheck(APIView):
-
     authentication_classes = [JwtAuthorizationAuthentication, ]
 
     def post(self, request):
         try:
             req = request.data
             req_build_unit_station = req['build_unit_station']
-            # print(req_build_unit_station)
             existStation = StationInfo.objects.filter(build_unit_station=req_build_unit_station).first()
             if existStation == None:
                 S = StationInfo()
@@ -42,8 +40,8 @@ class StationCheck(APIView):
                 s_info['status_num'] = s.status_num
                 all_station.append(s_info)
                 station_options.append({
-                    'value' : s_info['build_unit_station'],
-                    'label' : s_info['build_unit_station']
+                    'value': s_info['build_unit_station'],
+                    'label': s_info['build_unit_station']
                 })
             # print(station_options)
             total = len(all_station)
@@ -63,5 +61,29 @@ class StationCheck(APIView):
         pass
 
 
-# print(123)
-# print(4567)
+class Station4G(APIView):
+
+    def post(self, request):
+        try:
+            req = request.data
+            stationid = req['stationid']
+            existStation = StationInfo.objects.filter(build_unit_station=stationid).first()
+            if existStation == None:
+                S = StationInfo()
+                S.build_unit_station = stationid
+                S.save()
+                return JsonResponse({'code': 'success'}, status=status.HTTP_200_OK)
+            else:
+                return JsonResponse({'code': '饲喂站已存在,请重新输入'}, status=201)
+        except Exception as e:
+            print(e)
+            return JsonResponse({'code': '添加失败'}, status=201)
+
+    def get(self, request):
+        pass
+
+    def put(self, request):
+        pass
+
+    def delete(self, request):
+        pass
