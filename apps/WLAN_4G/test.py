@@ -22,4 +22,6 @@
 import time
 
 now_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-print(now_time)
+
+a = time.strftime("%Y-%m-%d", time.strptime('20190304', "%Y%m%d"))
+print(a)

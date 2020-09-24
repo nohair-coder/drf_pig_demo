@@ -8,6 +8,7 @@ from utils.jwt_token.jwt_auth import JwtAuthorizationAuthentication
 from django.db.models import Q
 import json
 import datetime
+import time
 from rest_framework import status
 
 
@@ -144,11 +145,29 @@ class PigBase4G(APIView):
         pass
 
     def post(self, request):
-        req = request.data
-        print(req)
         fake_pig_id = generate_pigid_str()
-        print(fake_pig_id)
-        return JsonResponse({'code': 'success'}, status=status.HTTP_200_OK)
+        try:
+            req = {
+                'Build_Unit_StationId': request.data['stationid'],
+                'PigId': fake_pig_id,
+                'EarId': request.data['earid'],
+                'BreedTime': time.strftime("%Y-%m-%d", time.strptime('20'+str(request.data['mating_date']), "%Y%m%d")),
+                'MalePigId': None,
+                'GestationalAge': request.data['parity'],
+                'BackFat': request.data['backfat']
+            }
+            exist_earid = PigBase.objects.filter(
+                Q(stationid=req['Build_Unit_StationId']) & Q(earid=req['EarId']) & Q(decpigtime=None))
+            if exist_earid:
+                return JsonResponse({'code': 'error1'}, status=status.HTTP_200_OK)
+            else:
+                write_pigbase(req)
+                write_backfat(req)
+                write_foodquantity(req)
+                return JsonResponse({'code': 'success'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            return JsonResponse({'code': 'error2'}, status=status.HTTP_200_OK)
 
     def delete(self, request):
         pass

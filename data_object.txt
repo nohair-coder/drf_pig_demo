@@ -1,1 +1,1 @@
-{"func": "intake", "start_time": "1903-04-05 06:00:07", "end_time": "1903-04-05 06:00:07", "stationid": "01010001", "food_intake": 100, "earid": "00000001"}
+{"func": "addpig", "stationid": "01010001", "earid": "99999997", "mating_date": "190304", "parity": 3, "backfat": 13.1}

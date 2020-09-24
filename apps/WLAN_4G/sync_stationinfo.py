@@ -31,7 +31,7 @@ def sync_stationinfo():
     :return:
     """
     # 获取到所有测定站的id
-    print('同步测定站状态 ----------------->>> ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    print('同步饲喂站状态 ----------------->>> ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     original_station_list = get_all_station()
     # 获取到所有测定站运行状态的 list => [{ 'stationid', 'status', 'errorcode' }]
     # station_running_info_list = get_all_station_running_info(original_station_list)

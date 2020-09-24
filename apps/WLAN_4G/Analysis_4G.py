@@ -152,26 +152,30 @@ def dataAnalyse(msg):
                 data_object['food_intake'] = msg['food_intake']
                 data_object['earid'] = msg['earid']  # 8位
             elif func == 'addpig':
-                data_object['func'] = func
-                data_object['stationid'] = msg['stationid']  # 饲喂站号
-                data_object['earid'] = msg['earid']  # 耳标号
-                data_object['breedtime'] = msg['mating_date']  # 配种日期
-                data_object['gesage'] = msg['parity']  # 胎龄
-                data_object['backfat'] = msg['backfat']  # 背膘厚
+                data_object = msg
+                # data_object['func'] = func
+                # data_object['stationid'] = msg['stationid']  # 饲喂站号
+                # data_object['earid'] = msg['earid']  # 耳标号
+                # data_object['breedtime'] = msg['mating_date']  # 配种日期
+                # data_object['gesage'] = msg['parity']  # 胎龄
+                # data_object['backfat'] = msg['backfat']  # 背膘厚
             elif func == 'changestation':
-                data_object['func'] = func
-                data_object['stationid'] = msg['stationid']  # 旧饲喂站号
-                data_object['earid'] = msg['earid']  # 旧耳标号
-                data_object['new_stationid'] = msg['new_stationid']  # 新饲喂站号
-                data_object['new_earid'] = msg['new_earid']  # 新饲喂站号
+                data_object = msg
+                # data_object['func'] = func
+                # data_object['stationid'] = msg['stationid']  # 旧饲喂站号
+                # data_object['earid'] = msg['earid']  # 旧耳标号
+                # data_object['new_stationid'] = msg['new_stationid']  # 新饲喂站号
+                # data_object['new_earid'] = msg['new_earid']  # 新饲喂站号
             elif func == 'asyncdata':
-                data_object['func'] = func
+                data_object = msg
+                # data_object['func'] = func
             elif func == 'changedata':
-                data_object['func'] = func
-                data_object['stationid'] = msg['stationid']  # 饲喂站号
-                data_object['earid'] = msg['earid']  # 耳标号
-                data_object['revised_feed_intake '] = msg['revised_feed_intake ']  # 修订采食量
-                data_object['backfat'] = msg['backfat']  # 背膘厚
+                data_object = msg
+                # data_object['func'] = func
+                # data_object['stationid'] = msg['stationid']  # 饲喂站号
+                # data_object['earid'] = msg['earid']  # 耳标号
+                # data_object['revised_feed_intake '] = msg['revised_feed_intake ']  # 修订采食量
+                # data_object['backfat'] = msg['backfat']  # 背膘厚
             else:
                 print(func + 'dataAnalyse error')
                 data_object = {}
@@ -187,7 +191,7 @@ def dataAnalyse(msg):
             f.write(json.dumps(data_object))
         clearTemp(node_id)
     else:
-        print('data_obj is null')
+        print('dataAnalyse  data_obj is null')
 
 
 def clearTemp(node_id):

@@ -11,7 +11,7 @@ class PigBase(models.Model):
     pigid = models.CharField(max_length=16, unique=True, verbose_name='身份码')
     earid = models.CharField(max_length=16, verbose_name='耳标号')
     pigkind = models.CharField(max_length=20, verbose_name='品种', null=True)
-    malepignum = models.CharField(max_length=20, verbose_name='与配公猪号')
+    malepignum = models.CharField(max_length=20, null=True, verbose_name='与配公猪号')
     gesage = models.FloatField(default=0, verbose_name='胎龄')
     # vaccine = models.CharField(max_length=64, verbose_name='疫苗情况')
     addpigtime = models.DateField(auto_now_add=True, verbose_name='入栏日期')

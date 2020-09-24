@@ -90,5 +90,5 @@ def delete_pigbase(req):
 
 
 def generate_pigid_str():
-    salt = ''.join(random.sample(string.ascii_letters + string.digits, 8))
+    salt = ''.join(random.sample(string.ascii_letters + string.digits, 15))
     return salt

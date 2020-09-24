@@ -11,7 +11,7 @@ def dataPost(json_object):
         r = requests.post(baseURL+'intakedata/', json=json_object)
         # r = requests.post("http://httpbin.org/post", data=payload)
         ack = json.loads(r.text)
-        if not ack['code']:
+        if ack['code'] != 'success':
             print('dataPost', ack)
             print('dataPost err', json_object)
             return False

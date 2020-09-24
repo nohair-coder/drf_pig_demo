@@ -79,13 +79,11 @@ def serverSend():
     while not exit_flag:
         try:
             data_obj = Analysis_4G.serverSendQueue.get(timeout=3)
-            print(data_obj)
+            server_flag = 0
             if data_obj['func'] == 'intake':
-                if not dataPost(data_obj):
-                    print('serverSend dataPost Error')
+                server_flag = dataPost(data_obj)
             elif data_obj['func'] == 'addpig':
-                if not pigPost(data_obj):
-                    print('serverSend pigPost Error')
+                server_flag = pigPost(data_obj)
             elif data_obj['func'] == 'changestation':
                 pass
             elif data_obj['func'] == 'changedata':
@@ -94,6 +92,9 @@ def serverSend():
             #     print('serverSend Error')
                 # Analysis_4G.serverSendQueue.put(data_obj)
             time.sleep(0.1)
+            if not server_flag:
+                with open('../../error.txt', 'a') as fe:
+                    fe.write(data_obj + '\n')
         except:
             pass
 
